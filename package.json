@@ -1,0 +1,16 @@
+{
+  "name": "eq502p-remote",
+  "version": "0.1.0",
+  "description": "Control a Bettermaker EQ502P from a phone or browser, without a DAW",
+  "main": "server.js",
+  "private": true,
+  "scripts": {
+    "start": "node server.js",
+    "mock": "node server.js --mock",
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "@julusian/midi": "^3.6.1"
+  },
+  "engines": { "node": ">=18" }
+}

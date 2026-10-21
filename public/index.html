@@ -1,0 +1,620 @@
+<title>EQ502P Remote</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Michroma&family=IBM+Plex+Sans+Hebrew:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: an engraved rack faceplate per channel (LOW section | HIGH section), controls row-wrapped; phone = one channel with tabs */
+:root {
+  --bg: #dfe3e6;          /* bench / page */
+  --plate: #b9c6cf;       /* Pultec blue-grey enamel */
+  --plate-edge: #9eadb8;
+  --engrave: #1f2a33;     /* engraved lettering */
+  --muted: #4c5b67;
+  --knob: #17191b;        /* bakelite knob */
+  --knob-hi: #3a3f44;
+  --track: #8d9ca7;
+  --lamp: #f2a413;        /* amber pilot lamp */
+  --lamp-off: #6f5a2c;
+  --ok: #2f8a4f; --warn: #b7791f; --bad: #b23a3a;
+  --chip: #ffffff99;
+  --wood-a: #8a5530; --wood-b: #6b3d1f; --wood-c: #a26b40; --wood-d: #4f2c15;  /* walnut end cheeks */
+  --scope-bg: #0e1215; --scope-grid: #263038; --scope-zero: #3d4a54; --scope-text: #8a9aa5; --curve-1: #ffb52e; --curve-2: #5fd0e6;
+  --pad-1: #d64b45; --pad-2: #e8832a; --pad-3: #e3b62f; --pad-4: #47a865; --pad-5: #2a9d97; --pad-6: #3a76d0; --pad-7: #7657c4; --pad-8: #c9508f;
+  --rack-bg: #2a2e32; --rail: #8e969c; --rail-hole: #3b4146;                  /* lunchbox chassis */
+  --font-plate: "Michroma", "Eurostile", "Arial Narrow", sans-serif;
+  --font-body: "IBM Plex Sans Hebrew", "Segoe UI", "Arial Hebrew", system-ui, sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f1418; --plate: #2b3843; --plate-edge: #1d272f; --engrave: #dfe7ec; --muted: #9aabb8;
+  --knob: #0b0c0d; --knob-hi: #4a5158; --track: #50606c; --lamp: #ffb52e; --lamp-off: #5a4a26;
+  --ok: #4cc176; --warn: #e2a84b; --bad: #ec6b6b; --chip: #00000040; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0f1418; --plate: #2b3843; --plate-edge: #1d272f; --engrave: #dfe7ec; --muted: #9aabb8;
+  --knob: #0b0c0d; --knob-hi: #4a5158; --track: #50606c; --lamp: #ffb52e; --lamp-off: #5a4a26;
+  --ok: #4cc176; --warn: #e2a84b; --bad: #ec6b6b; --chip: #00000040; color-scheme: dark }
+
+[hidden] { display: none !important; }
+html, body { min-height: 100%; }
+body { background: var(--bg); color: var(--engrave); font-family: var(--font-body); font-size: 15px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 12px 32px; }
+.wrap { max-width: 1180px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+button { font: inherit; color: inherit; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--lamp); outline-offset: 2px; }
+
+/* top bar */
+.bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.masthead { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 2px; padding-block: 6px 4px; }
+.brand { margin: 0; font-family: var(--font-plate); font-weight: 400; font-size: clamp(28px, 7vw, 40px); letter-spacing: .16em; line-height: 1.1;
+  -webkit-text-stroke: .7px currentColor; padding-inline-start: .16em; }
+.brand-sub { font-size: 14px; letter-spacing: .3em; color: var(--muted); }
+.masthead-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 8px; }
+
+/* EQ curve display: a dark instrument screen in both themes */
+.scope { direction: ltr; position: relative; background: var(--scope-bg); border-radius: 6px; padding: 10px 12px 8px; box-shadow: inset 0 0 0 1px #000, inset 0 2px 10px #000a; }
+.scope canvas { display: block; width: 100%; height: 190px; }
+.scope-head { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; justify-content: space-between; font-family: var(--font-plate); font-size: 9.5px; letter-spacing: .2em; color: var(--scope-text); padding-bottom: 6px; }
+.scope-head .keys { display: flex; gap: 14px; }
+.scope-head .keys span { display: inline-flex; align-items: center; gap: 6px; }
+.scope-head .keys i { width: 14px; height: 3px; border-radius: 2px; }
+.scope-note { font-family: var(--font-body); letter-spacing: 0; font-size: 11px; color: var(--scope-text); opacity: .8; }
+@media (max-width: 520px) { .scope canvas { height: 150px; } }
+.status { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; background: var(--chip); border: 1px solid var(--plate-edge); font-size: 13px; }
+.status i { width: 9px; height: 9px; border-radius: 50%; background: var(--warn); }
+.status[data-s="on"] i { background: var(--ok); } .status[data-s="off"] i { background: var(--bad); }
+.btn { border: 1px solid var(--plate-edge); background: var(--plate); padding: 8px 14px; border-radius: 6px; font-size: 14px; }
+.btn.primary { background: var(--engrave); color: var(--bg); border-color: var(--engrave); }
+.seg { display: inline-flex; border: 1px solid var(--plate-edge); border-radius: 6px; overflow: hidden; }
+.seg button { border: 0; background: transparent; padding: 8px 14px; font-family: var(--font-plate); font-size: 11px; letter-spacing: .1em; }
+.seg button[aria-pressed="true"] { background: var(--engrave); color: var(--bg); }
+
+/* faceplates */
+.seg { direction: ltr; }
+/* Wooden 500-series lunchbox: walnut cheeks left/right, steel rails with rack holes top/bottom */
+.rack { position: relative; }
+.rack.wood { direction: ltr; background: var(--rack-bg); border-radius: 6px; padding: 22px 34px;
+  box-shadow: 0 10px 24px #0003, inset 0 0 0 1px #0006; }
+.rack.wood::before, .rack.wood::after { content: ""; position: absolute; top: 0; bottom: 0; width: 24px; border-radius: 6px;
+  background:
+    linear-gradient(90deg, #0000004d, #ffffff14 35%, #00000000 60%, #00000059),
+    repeating-linear-gradient(90deg, var(--wood-a) 0 3px, var(--wood-b) 3px 4px, var(--wood-c) 4px 7px, var(--wood-a) 7px 9px, var(--wood-d) 9px 10px, var(--wood-c) 10px 13px),
+    var(--wood-a); }
+.rack.wood::before { left: 0; } .rack.wood::after { right: 0; }
+.rack.wood .rail { position: absolute; left: 24px; right: 24px; height: 14px; background-color: var(--rail);
+  background-image: radial-gradient(circle, var(--rail-hole) 2.2px, transparent 2.8px); background-size: 22px 14px; background-position: center; }
+.rack.wood .rail.top { top: 0; } .rack.wood .rail.bottom { bottom: 0; }
+.rack:not(.wood) .rail { display: none; }
+.rack.wood .plate { box-shadow: 0 2px 0 #0007, 0 6px 14px #0005; }
+@media (max-width: 520px) { .rack.wood { padding: 18px 18px; } .rack.wood::before, .rack.wood::after { width: 12px; } .rack.wood .rail { left: 12px; right: 12px; height: 10px; background-size: 18px 10px; } }
+.plates { direction: ltr; display: grid; grid-template-columns: 1fr; gap: 14px; }
+.plates.dual { grid-template-columns: repeat(auto-fit, minmax(min(100%, 540px), 1fr)); }
+.plate { direction: ltr; position: relative; background: var(--plate); border: 1px solid var(--plate-edge); border-radius: 4px;
+  padding: 18px 18px 14px; display: flex; flex-direction: column; gap: 14px;
+  background-image: radial-gradient(circle at 12px 12px, var(--plate-edge) 3px, transparent 4px), radial-gradient(circle at calc(100% - 12px) 12px, var(--plate-edge) 3px, transparent 4px); }
+.plate-head { display: flex; align-items: center; gap: 12px; }
+.plate-head h2 { margin: 0; font-family: var(--font-plate); font-size: 13px; letter-spacing: .22em; font-weight: 400; }
+.lamp { display: inline-flex; align-items: center; gap: 10px; margin-left: auto; border: 1px solid var(--plate-edge); background: var(--chip); border-radius: 999px; padding: 6px 14px 6px 8px; font-family: var(--font-plate); font-size: 10px; letter-spacing: .15em; }
+.lamp i { width: 18px; height: 18px; border-radius: 50%; background: var(--lamp-off); box-shadow: inset 0 -2px 3px #0005; transition: background .15s, box-shadow .15s; }
+.lamp[aria-pressed="true"] i { background: var(--lamp); box-shadow: 0 0 12px var(--lamp), inset 0 -2px 3px #0003; }
+.sections { display: grid; grid-template-columns: 1fr; gap: 14px; }
+@media (min-width: 760px) { .plates:not(.dual) .sections { grid-template-columns: 2fr 3fr; } }
+.section { border-top: 1px solid var(--plate-edge); padding-top: 10px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.section > h3 { margin: 0; font-family: var(--font-plate); font-size: 10px; letter-spacing: .3em; color: var(--muted); font-weight: 400; }
+.row { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: flex-start; justify-content: space-around; }
+
+.ctl { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; }
+.ctl .lbl { font-family: var(--font-plate); font-size: 9.5px; letter-spacing: .16em; text-align: center; }
+.ctl .val { font-family: var(--font-data); font-size: 13px; font-variant-numeric: tabular-nums; color: var(--muted); }
+
+.knob { position: relative; width: 104px; height: 104px; touch-action: pan-y; user-select: none; -webkit-user-select: none; border-radius: 50%; }
+.knob .hit { position: absolute; inset: 17%; border-radius: 50%; touch-action: none; cursor: ns-resize; }
+.knob svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.knob .tick { stroke: var(--engrave); stroke-width: 1.2; }
+.knob .num { fill: var(--engrave); font-family: var(--font-data); font-size: 7px; text-anchor: middle; dominant-baseline: middle; }
+.knob .body { fill: var(--knob); }
+.knob .cap { fill: var(--knob-hi); }
+.knob .ptr { stroke: #f4f1e8; stroke-width: 3; stroke-linecap: round; }
+.knob .ring { fill: none; stroke: var(--track); stroke-width: 2.5; }
+.knob .arc { fill: none; stroke: var(--lamp); stroke-width: 2.5; stroke-linecap: round; }
+
+.steps { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; }
+.steps.one-line { flex-wrap: nowrap; gap: 3px; }
+.steps.one-line button { min-width: 0; flex: 1 1 0; width: 40px; padding: 0 2px; }
+.ctl.wide { width: 100%; max-width: 380px; }
+.ctl.wide .steps { width: 100%; }
+.row.spaced { padding-top: 6px; border-top: 1px dashed var(--plate-edge); }
+.steps button { min-width: 40px; min-height: 40px; padding: 0 8px; border: 1px solid var(--plate-edge); background: var(--chip); border-radius: 5px; font-family: var(--font-data); font-size: 13px; font-variant-numeric: tabular-nums; }
+.steps button[aria-pressed="true"] { background: var(--knob); color: #f4f1e8; border-color: var(--knob); }
+
+.tabs { display: none; }
+@media (max-width: 1099px) { .plates.dual { grid-template-columns: 1fr; } .plates.dual.tabbed .plate[data-hide="1"] { display: none; } .tabs.show { display: inline-flex; } }
+
+/* lower bench */
+.bench { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 14px; }
+.card { border: 1px solid var(--plate-edge); border-radius: 6px; padding: 14px; display: flex; flex-direction: column; gap: 10px; min-width: 0; background: var(--chip); }
+.card h3 { margin: 0; font-size: 14px; font-weight: 600; }
+.card p { margin: 0; color: var(--muted); font-size: 13px; max-width: 65ch; }
+/* Preset pads: colored caps, lit when they hold a preset */
+.pads-card { background: linear-gradient(160deg, var(--plate), var(--chip)); }
+.slots { direction: ltr; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.pad { --c: var(--pad-1); position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  min-height: 62px; border-radius: 8px; border: 1px solid color-mix(in srgb, var(--c) 55%, transparent);
+  background: color-mix(in srgb, var(--c) 12%, var(--bg)); color: var(--c);
+  box-shadow: inset 0 3px 0 var(--c), 0 2px 0 color-mix(in srgb, var(--c) 35%, #000);
+  transition: transform .08s, box-shadow .15s, background .15s; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
+.pad b { font-family: var(--font-plate); font-size: 18px; font-weight: 400; line-height: 1; }
+.pad small { font-size: 11px; color: var(--muted); }
+.pad.filled { background: linear-gradient(180deg, color-mix(in srgb, var(--c) 92%, #fff), var(--c) 55%, color-mix(in srgb, var(--c) 80%, #000)); color: #fff;
+  border-color: color-mix(in srgb, var(--c) 70%, #000); box-shadow: inset 0 1px 0 #ffffff66, 0 3px 0 color-mix(in srgb, var(--c) 60%, #000), 0 6px 14px color-mix(in srgb, var(--c) 35%, transparent); }
+.pad.filled small { color: #ffffffd9; }
+.pad.active { outline: 3px solid var(--engrave); outline-offset: 2px; }
+.pad:active { transform: translateY(2px) scale(.97); }
+.saving .pad { animation: padPulse 1s ease-in-out infinite; border-style: dashed; }
+@keyframes padPulse { 50% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--c) 45%, transparent); } }
+.inline { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.log { direction: ltr; font-family: var(--font-data); font-size: 11px; line-height: 1.55; height: 88px; max-height: 88px; overflow: auto; background: var(--bg); border-radius: 4px; padding: 8px 10px; margin: 0; white-space: pre; }
+.log .in { color: var(--ok); } .log .out { color: var(--muted); }
+.hint { font-size: 12.5px; color: var(--muted); }
+.toast { position: fixed; inset: auto 0 0 0; display: flex; justify-content: center; pointer-events: none; padding: 0 16px calc(16px + env(safe-area-inset-bottom, 0px)); }
+.toast span { background: var(--engrave); color: var(--bg); padding: 8px 16px; border-radius: 6px; font-size: 14px; opacity: 0; transition: opacity .2s; }
+.toast span.show { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap" dir="rtl">
+  <header class="masthead">
+    <h1 class="brand">EQ502P</h1>
+    <div class="brand-sub">שלט רחוק</div>
+    <div class="masthead-row">
+      <span class="status" id="status" data-s="wait"><i></i><span id="statusText">מחפש מכשיר…</span></span>
+      <button class="btn primary" id="connectBtn" hidden>התחבר ב-USB</button>
+    </div>
+  </header>
+
+  <div class="bar">
+    <div class="seg" role="group" aria-label="מצב">
+      <button id="modeStereo" aria-pressed="true">STEREO</button>
+      <button id="modeDual" aria-pressed="false">DUAL MONO</button>
+    </div>
+    <div class="seg tabs" id="tabs" role="group" aria-label="ערוץ">
+      <button id="tab0" aria-pressed="true">CH 1</button>
+      <button id="tab1" aria-pressed="false">CH 2</button>
+    </div>
+    <div class="seg" role="group" aria-label="השוואה">
+      <button id="abA" aria-pressed="true">A</button>
+      <button id="abB" aria-pressed="false">B</button>
+    </div>
+    <button class="btn" id="copyAB">A → B</button>
+    <button class="btn" id="woodBtn" aria-pressed="true">מסגרת עץ</button>
+  </div>
+
+  <section class="scope" aria-label="תצוגת עקומת EQ">
+    <div class="scope-head">
+      <span>RESPONSE</span>
+      <span class="keys"><span><i style="background:var(--curve-1)"></i><b id="key1">STEREO</b></span><span id="key2wrap" hidden><i style="background:var(--curve-2)"></i>CH 2</span></span>
+      <span class="scope-note">הדמיה משוערת של עקומת הפולטק</span>
+    </div>
+    <canvas id="eqCanvas"></canvas>
+  </section>
+
+  <div class="rack wood" id="rack">
+    <div class="rail top"></div>
+    <main class="plates" id="plates"></main>
+    <div class="rail bottom"></div>
+  </div>
+
+  <section class="bench">
+    <div class="card" id="phoneCard" hidden>
+      <h3>שליטה מהטלפון</h3>
+      <p>סרוק עם המצלמה של הטלפון, או פתח את הכתובת בדפדפן. הטלפון והמחשב צריכים להיות באותה רשת Wi-Fi.</p>
+      <div class="inline"><div id="qr" style="background:#fff;padding:8px;border-radius:4px;line-height:0"></div><code id="phoneUrl" dir="ltr" style="font-family:var(--font-data);font-size:15px;user-select:all"></code></div>
+    </div>
+    <div class="card pads-card" id="padsCard">
+      <h3>פריסטים</h3>
+      <p>לחיצה טוענת. לחיצה ארוכה, או "שמור" ואחריה בחירת תא, שומרת את המצב הנוכחי. הפריסטים נשמרים בדפדפן הזה.</p>
+      <div class="slots" id="slots"></div>
+      <div class="inline"><button class="btn" id="saveMode">שמור לתא…</button><button class="btn" id="recallBtn">שלח הכל למכשיר</button></div>
+    </div>
+    <div class="card">
+      <h3>ניטור MIDI</h3>
+      <p>כל הודעה שנשלחת למכשיר ומתקבלת ממנו. הודעות ירוקות הגיעו מהמכשיר.</p>
+      <pre class="log" id="log"></pre>
+      <div class="inline"><button class="btn" id="helloBtn">שלח לחיצת יד</button><button class="btn" id="clearLog">נקה</button><span class="hint" id="unitInfo">יחידה: —</span></div>
+    </div>
+  </section>
+</div>
+<div class="toast" aria-live="polite"><span id="toast"></span></div>
+
+<script src="protocol.js"></script>
+<script src="bridge-config.js"></script>
+<script>
+(function () {
+  'use strict';
+  const P = window.EQ502P;
+  const $ = (id) => document.getElementById(id);
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
+  };
+
+  /* ---------- toast + log ---------- */
+  let toastT;
+  function toast(t) { const el = $('toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('show'), 1800); }
+  const logLines = [];
+  function log(dir, bytes, note) {
+    const time = new Date().toTimeString().slice(0, 8);
+    logLines.push({ dir, text: time + (dir === 'in' ? ' ← ' : ' → ') + (typeof bytes === 'string' ? bytes : P.hex(bytes)) + (note ? '   ' + note : '') });
+    if (logLines.length > 200) logLines.shift();
+    renderLogSoon();
+  }
+  let logRaf = 0;
+  function renderLogSoon() {
+    if (logRaf) return;
+    logRaf = requestAnimationFrame(() => {
+      logRaf = 0; const el = $('log');
+      el.innerHTML = logLines.map((l) => '<span class="' + l.dir + '">' + l.text.replace(/&/g, '&amp;').replace(/</g, '&lt;') + '</span>').join('\n');
+      el.scrollTop = el.scrollHeight;
+    });
+  }
+  function setStatus(s, text) { $('status').dataset.s = s; $('statusText').textContent = text; }
+
+  /* ---------- transports ---------- */
+  let api; // { state, set, setMode, load, recallAll, hello }
+
+  // Direct (Chrome) mode keeps the last session in this browser, so the next connection restores it.
+  let saveT;
+  function localController(sendFn) {
+    const c = P.createController({ send: sendFn, log, onChange: (st, info) => {
+      render(info);
+      clearTimeout(saveT);
+      saveT = setTimeout(() => store.set('eq502p-last', { mode: st.mode, channels: st.channels }), 400);
+    } });
+    const last = store.get('eq502p-last', null);
+    if (last && last.channels) { c.state.mode = last.mode; c.state.channels = last.channels.map((ch) => Object.assign(P.defaultChannel(), ch)); }
+    return c;
+  }
+
+  function startDemo(reason) {
+    api = localController(() => {});
+    setStatus('wait', reason || 'מצב הדגמה, אין מכשיר');
+    render({ keys: ['*'] });
+  }
+
+  async function startWebMidi(fromClick) {
+    let access;
+    try { access = await navigator.requestMIDIAccess({ sysex: true }); }
+    catch (e) {
+      setStatus('off', 'אין הרשאת MIDI. לחץ "התחבר ב-USB" ואשר SysEx');
+      $('connectBtn').hidden = false;
+      if (!api) startDemo('אין הרשאת MIDI');
+      return;
+    }
+    $('connectBtn').hidden = true;
+    let output = null, input = null;
+    const prev = api && api.snapshot ? api.snapshot() : null;
+    api = localController((bytes) => { if (output) output.send(bytes); });
+    if (prev) Object.assign(api.state, { mode: prev.mode, channels: prev.channels });
+    function scan() {
+      const outs = [...access.outputs.values()].filter((p) => P.DEVICE_NAME_MATCH.test(p.name) && p.state !== 'disconnected');
+      const ins = [...access.inputs.values()].filter((p) => P.DEVICE_NAME_MATCH.test(p.name) && p.state !== 'disconnected');
+      const o = outs[0] || null, i = ins[0] || null;
+      if (o === output && i === input) return;
+      if (input) input.onmidimessage = null;
+      output = o; input = i;
+      if (input) input.onmidimessage = (e) => { if (e.data[0] === 0xf0) api.receive(e.data); };
+      if (output) {
+        api.state.unit = null;
+        setStatus('on', 'מחובר: ' + output.name);
+        api.hello();
+        setTimeout(() => {
+          if (api.state.unit == null) log('in', '(no reply yet)', 'אין תשובה ללחיצת היד; שולח ליחידה 0');
+          const src = api.syncAfterConnect();
+          toast(src === 'device' ? 'מוצגות ההגדרות שהמכשיר דיווח' : 'ההגדרות האחרונות שנשמרו נשלחו למכשיר');
+          render({ keys: ['*'] });
+        }, 900);
+      } else setStatus('off', 'Chrome מוכן. חבר את ה-EQ502P ב-USB');
+    }
+    access.onstatechange = scan;
+    scan();
+    render({ keys: ['*'] });
+  }
+
+  function startBridge(cfg) {
+    let ws, st = { mode: 'stereo', unit: null, channels: [P.defaultChannel(), P.defaultChannel()] };
+    const sendWs = (m) => { if (ws && ws.readyState === 1) ws.send(JSON.stringify(m)); };
+    api = {
+      state: st,
+      set(ch, key, value) { st.channels[ch][key] = key === 'engage' ? !!value : Number(value); if (st.mode === 'stereo' && ch === 0) st.channels[1][key] = st.channels[0][key]; sendWs({ type: 'set', ch, key, value }); },
+      setMode(mode) { st.mode = mode; sendWs({ type: 'mode', mode }); render({ keys: ['mode'] }); },
+      load(snap) { sendWs({ type: 'load', snapshot: snap }); },
+      recallAll() { sendWs({ type: 'recall' }); },
+      hello() { sendWs({ type: 'hello' }); },
+      snapshot() { return JSON.parse(JSON.stringify(st)); },
+    };
+    function connect() {
+      ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + (cfg.path || '/ws'));
+      ws.onopen = () => setStatus('wait', 'מחובר למחשב, ממתין למכשיר…');
+      ws.onclose = () => { setStatus('off', 'החיבור למחשב נותק, מנסה שוב…'); setTimeout(connect, 1500); };
+      ws.onmessage = (e) => {
+        const m = JSON.parse(e.data);
+        if (m.type === 'state') { st.mode = m.state.mode; st.unit = m.state.unit; st.channels = m.state.channels; render({ keys: ['*'], source: 'bridge' }); }
+        else if (m.type === 'device') setStatus(m.connected ? 'on' : 'off', m.connected ? 'מחובר דרך המחשב: ' + m.name : 'המחשב פעיל, ה-EQ502P לא מחובר');
+        else if (m.type === 'log') log(m.dir, m.hex, m.note);
+      };
+    }
+    connect();
+    render({ keys: ['*'] });
+  }
+
+  /* ---------- UI build ---------- */
+  const C = P.CONTROLS;
+  const ui = [{}, {}];
+  let tab = 0;
+
+  function knob(chIndex, key) {
+    const def = C[key];
+    const wrap = document.createElement('div'); wrap.className = 'ctl';
+    const k = document.createElement('div'); k.className = 'knob'; k.tabIndex = 0; k.setAttribute('role', 'slider');
+    k.setAttribute('aria-label', def.label + ' CH' + (chIndex + 1)); k.setAttribute('aria-valuemin', '0'); k.setAttribute('aria-valuemax', '10');
+    const ticks = [];
+    for (let i = 0; i <= 10; i++) {
+      const a = (-135 + i * 27) * Math.PI / 180, r1 = 44, r2 = i % 5 === 0 ? 49 : 47;
+      ticks.push('<line class="tick" x1="' + (50 + r1 * Math.sin(a)).toFixed(2) + '" y1="' + (50 - r1 * Math.cos(a)).toFixed(2) + '" x2="' + (50 + r2 * Math.sin(a)).toFixed(2) + '" y2="' + (50 - r2 * Math.cos(a)).toFixed(2) + '"/>');
+      if (i % 2 === 0) ticks.push('<text class="num" x="' + (50 + 56 * Math.sin(a)).toFixed(2) + '" y="' + (50 - 56 * Math.cos(a)).toFixed(2) + '">' + i + '</text>');
+    }
+    k.innerHTML = '<svg viewBox="0 0 100 100" aria-hidden="true">' + ticks.join('') +
+      '<circle class="ring" cx="50" cy="50" r="40"/><path class="arc" d=""/>' +
+      '<g class="rot"><circle class="body" cx="50" cy="50" r="33"/><circle class="cap" cx="50" cy="50" r="22"/><line class="ptr" x1="50" y1="45" x2="50" y2="20"/></g></svg>';
+    const lbl = document.createElement('div'); lbl.className = 'lbl'; lbl.textContent = def.label;
+    const val = document.createElement('div'); val.className = 'val';
+    wrap.append(k, lbl, val);
+    let dragging = false, startY = 0, startX = 0, startV = 0;
+    const cur = () => api.state.channels[chIndex][key];
+    const setV = (v) => { v = Math.max(0, Math.min(def.max, Math.round(v))); if (v !== cur()) { api.set(chIndex, key, v); paintKnob(k, val, v, def.max); scheduleDraw(); } };
+    // Only the knob body grabs drags; the scale ring around it lets the page scroll.
+    const hit = document.createElement('div'); hit.className = 'hit'; k.append(hit);
+    hit.addEventListener('pointerdown', (e) => { dragging = true; startY = e.clientY; startX = e.clientX; startV = cur(); hit.setPointerCapture(e.pointerId); k.focus({ preventScroll: true }); e.preventDefault(); });
+    hit.addEventListener('pointermove', (e) => { if (!dragging) return; const d = (startY - e.clientY) + (e.clientX - startX) * 0.5; setV(startV + d * (e.shiftKey ? 0.25 : 1.1)); });
+    const end = () => { dragging = false; };
+    hit.addEventListener('pointerup', end); hit.addEventListener('pointercancel', end);
+    let lastTap = 0;
+    hit.addEventListener('pointerup', () => { const t = Date.now(); if (t - lastTap < 300) setV(0); lastTap = t; });
+    hit.addEventListener('wheel', (e) => { e.preventDefault(); setV(cur() + (e.deltaY < 0 ? 5 : -5)); }, { passive: false });
+    k.addEventListener('keydown', (e) => {
+      const step = e.shiftKey ? 1 : 5;
+      if (e.key === 'ArrowUp' || e.key === 'ArrowRight') { setV(cur() + step); e.preventDefault(); }
+      if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') { setV(cur() - step); e.preventDefault(); }
+      if (e.key === 'Home') setV(0); if (e.key === 'End') setV(def.max);
+    });
+    ui[chIndex][key] = { update: (v) => { if (!dragging) paintKnob(k, val, v, def.max); } };
+    return wrap;
+  }
+
+  function paintKnob(k, valEl, v, max) {
+    const f = v / max, deg = -135 + f * 270;
+    k.querySelector('.rot').setAttribute('transform', 'rotate(' + deg.toFixed(1) + ' 50 50)');
+    const a0 = -135 * Math.PI / 180, a1 = deg * Math.PI / 180, r = 40;
+    const p = (a) => (50 + r * Math.sin(a)).toFixed(2) + ' ' + (50 - r * Math.cos(a)).toFixed(2);
+    k.querySelector('.arc').setAttribute('d', f > 0.002 ? 'M ' + p(a0) + ' A 40 40 0 ' + (f * 270 > 180 ? 1 : 0) + ' 1 ' + p(a1) : '');
+    const shown = (f * 10).toFixed(1);
+    valEl.textContent = shown; k.setAttribute('aria-valuenow', shown);
+  }
+
+  function steps(chIndex, key, oneLine) {
+    const def = C[key];
+    const wrap = document.createElement('div'); wrap.className = 'ctl' + (oneLine ? ' wide' : '');
+    const row = document.createElement('div'); row.className = 'steps' + (oneLine ? ' one-line' : ''); row.setAttribute('role', 'group'); row.setAttribute('aria-label', def.label);
+    const btns = def.names.map((n, i) => {
+      const b = document.createElement('button'); b.textContent = n; b.setAttribute('aria-pressed', 'false');
+      b.addEventListener('click', () => { api.set(chIndex, key, i); upd(i); scheduleDraw(); });
+      row.append(b); return b;
+    });
+    const lbl = document.createElement('div'); lbl.className = 'lbl'; lbl.textContent = def.label + (def.unit ? ' · ' + def.unit : '');
+    wrap.append(row, lbl);
+    function upd(i) { btns.forEach((b, k) => b.setAttribute('aria-pressed', String(k === i))); }
+    ui[chIndex][key] = { update: upd };
+    return wrap;
+  }
+
+  function plate(chIndex) {
+    const el = document.createElement('section'); el.className = 'plate'; el.dataset.ch = chIndex;
+    const head = document.createElement('div'); head.className = 'plate-head';
+    const h = document.createElement('h2'); h.textContent = chIndex === 0 ? 'CHANNEL 1' : 'CHANNEL 2';
+    const lamp = document.createElement('button'); lamp.className = 'lamp'; lamp.innerHTML = '<i></i>ENGAGE';
+    lamp.addEventListener('click', () => { const v = !api.state.channels[chIndex].engage; api.set(chIndex, 'engage', v); lamp.setAttribute('aria-pressed', String(v)); scheduleDraw(); });
+    ui[chIndex].engage = { update: (v) => lamp.setAttribute('aria-pressed', String(!!v)) };
+    ui[chIndex].title = h;
+    head.append(h, lamp);
+    const secs = document.createElement('div'); secs.className = 'sections';
+    const low = document.createElement('div'); low.className = 'section'; low.innerHTML = '<h3>LOW FREQUENCY</h3>';
+    const lr1 = document.createElement('div'); lr1.className = 'row'; lr1.append(steps(chIndex, 'loCps'));
+    const lr2 = document.createElement('div'); lr2.className = 'row'; lr2.append(knob(chIndex, 'loBoost'), knob(chIndex, 'loAtten'));
+    low.append(lr1, lr2);
+    const high = document.createElement('div'); high.className = 'section'; high.innerHTML = '<h3>HIGH FREQUENCY</h3>';
+    const hr1 = document.createElement('div'); hr1.className = 'row'; hr1.append(steps(chIndex, 'hiKcsBoost', true));
+    const hrBw = document.createElement('div'); hrBw.className = 'row spaced'; hrBw.append(steps(chIndex, 'hiBandwidth'));
+    const hr2 = document.createElement('div'); hr2.className = 'row'; hr2.append(knob(chIndex, 'hiBoost'), knob(chIndex, 'hiAtten'));
+    const hr3 = document.createElement('div'); hr3.className = 'row'; hr3.append(steps(chIndex, 'hiKcsAtten'));
+    high.append(hr1, hrBw, hr2, hr3);
+    secs.append(low, high);
+    el.append(head, secs);
+    return el;
+  }
+
+  const platesEl = $('plates');
+  const plates = [plate(0), plate(1)];
+  platesEl.append(...plates);
+
+  function render() {
+    if (!api) return;
+    const st = api.state, dual = st.mode === 'dual';
+    $('modeStereo').setAttribute('aria-pressed', String(!dual));
+    $('modeDual').setAttribute('aria-pressed', String(dual));
+    platesEl.classList.toggle('dual', dual);
+    platesEl.classList.add('tabbed');
+    plates[1].hidden = !dual;
+    plates.forEach((p, i) => { p.dataset.hide = dual && i !== tab ? '1' : '0'; });
+    $('tabs').classList.toggle('show', dual);
+    $('tab0').setAttribute('aria-pressed', String(tab === 0)); $('tab1').setAttribute('aria-pressed', String(tab === 1));
+    ui[0].title.textContent = dual ? 'CHANNEL 1' : 'STEREO';
+    [0, 1].forEach((c) => Object.keys(C).forEach((k) => ui[c][k] && ui[c][k].update(st.channels[c][k])));
+    $('unitInfo').textContent = 'יחידה: ' + (st.unit == null ? '—' : st.unit);
+    scheduleDraw();
+  }
+
+  /* ---------- EQ curve (approximate Pultec response, RBJ biquads) ---------- */
+  const FS = 96000;
+  function biquad(type, f, gainDb, q) {
+    const A = Math.pow(10, gainDb / 40), w = 2 * Math.PI * f / FS, cw = Math.cos(w), sw = Math.sin(w);
+    let b0, b1, b2, a0, a1, a2;
+    if (type === 'peak') {
+      const al = sw / (2 * q);
+      b0 = 1 + al * A; b1 = -2 * cw; b2 = 1 - al * A; a0 = 1 + al / A; a1 = -2 * cw; a2 = 1 - al / A;
+    } else {
+      const al = sw / 2 * Math.sqrt((A + 1 / A) * (1 / q - 1) + 2), sA = 2 * Math.sqrt(A) * al;
+      if (type === 'low') {
+        b0 = A * ((A + 1) - (A - 1) * cw + sA); b1 = 2 * A * ((A - 1) - (A + 1) * cw); b2 = A * ((A + 1) - (A - 1) * cw - sA);
+        a0 = (A + 1) + (A - 1) * cw + sA; a1 = -2 * ((A - 1) + (A + 1) * cw); a2 = (A + 1) + (A - 1) * cw - sA;
+      } else {
+        b0 = A * ((A + 1) + (A - 1) * cw + sA); b1 = -2 * A * ((A - 1) + (A + 1) * cw); b2 = A * ((A + 1) + (A - 1) * cw - sA);
+        a0 = (A + 1) - (A - 1) * cw + sA; a1 = 2 * ((A - 1) - (A + 1) * cw); a2 = (A + 1) - (A - 1) * cw - sA;
+      }
+    }
+    return [b0 / a0, b1 / a0, b2 / a0, a1 / a0, a2 / a0];
+  }
+  function magDb(c, f) {
+    const w = 2 * Math.PI * f / FS, c1 = Math.cos(w), s1 = Math.sin(w), c2 = Math.cos(2 * w), s2 = Math.sin(2 * w);
+    const nr = c[0] + c[1] * c1 + c[2] * c2, ni = -(c[1] * s1 + c[2] * s2);
+    const dr = 1 + c[3] * c1 + c[4] * c2, di = -(c[3] * s1 + c[4] * s2);
+    return 10 * Math.log10((nr * nr + ni * ni) / (dr * dr + di * di));
+  }
+  const LF = [20, 30, 60, 100], HF = [3000, 4000, 5000, 8000, 10000, 12000, 16000], HQ = [2.2, 1.4, 0.9, 0.55], AF = [5000, 10000, 20000];
+  function channelFilters(ch) {
+    if (!ch.engage) return [];
+    const out = [], lf = LF[ch.loCps] || 20;
+    // Boost: steep resonant shelf. Atten: very gentle shelf that reaches higher -> the classic bump + dip when both are up.
+    if (ch.loBoost) out.push(biquad('low', lf * 1.3, ch.loBoost / 250 * 13.5, 1.4));
+    if (ch.loAtten) out.push(biquad('low', lf * 1.2, -ch.loAtten / 250 * 17.5, 0.3));
+    if (ch.hiBoost) out.push(biquad('peak', HF[ch.hiKcsBoost] || 3000, ch.hiBoost / 250 * 18, HQ[ch.hiBandwidth] || 1));
+    if (ch.hiAtten) out.push(biquad('high', Math.min(AF[ch.hiKcsAtten] || 5000, 30000), -ch.hiAtten / 250 * 16, 0.6));
+    return out;
+  }
+  const canvas = $('eqCanvas'), ctx = canvas.getContext('2d');
+  const FMIN = 20, FMAX = 20000, DBR = 20;
+  let drawRaf = 0;
+  function scheduleDraw() { if (!drawRaf) drawRaf = requestAnimationFrame(() => { drawRaf = 0; drawEq(); }); }
+  function drawEq() {
+    if (!api) return;
+    const css = getComputedStyle(document.documentElement), col = (n) => css.getPropertyValue(n).trim();
+    const dpr = window.devicePixelRatio || 1, W = canvas.clientWidth, H = canvas.clientHeight;
+    if (!W || !H) return;
+    if (canvas.width !== Math.round(W * dpr) || canvas.height !== Math.round(H * dpr)) { canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr); }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
+    const L = 30, R = 6, T = 6, B = 18, pw = W - L - R, ph = H - T - B;
+    const x = (f) => L + Math.log(f / FMIN) / Math.log(FMAX / FMIN) * pw;
+    const y = (db) => T + (1 - (db + DBR) / (2 * DBR)) * ph;
+    ctx.font = '10px ' + col('--font-data'); ctx.fillStyle = col('--scope-text'); ctx.lineWidth = 1;
+    [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000].forEach((f) => {
+      ctx.strokeStyle = col('--scope-grid'); ctx.beginPath(); ctx.moveTo(Math.round(x(f)) + .5, T); ctx.lineTo(Math.round(x(f)) + .5, T + ph); ctx.stroke();
+      ctx.textAlign = f === 20 ? 'left' : f === 20000 ? 'right' : 'center';
+      if (W > 420 || [20, 100, 1000, 10000].includes(f)) ctx.fillText(f >= 1000 ? f / 1000 + 'k' : String(f), x(f), H - 4);
+    });
+    [-18, -12, -6, 0, 6, 12, 18].forEach((db) => {
+      ctx.strokeStyle = col(db === 0 ? '--scope-zero' : '--scope-grid'); ctx.beginPath(); ctx.moveTo(L, Math.round(y(db)) + .5); ctx.lineTo(L + pw, Math.round(y(db)) + .5); ctx.stroke();
+      ctx.textAlign = 'right'; ctx.fillText((db > 0 ? '+' : '') + db, L - 5, y(db) + 3);
+    });
+    const st = api.state, dual = st.mode === 'dual';
+    const curves = dual ? [[st.channels[0], '--curve-1'], [st.channels[1], '--curve-2']] : [[st.channels[0], '--curve-1']];
+    curves.slice().reverse().forEach(([ch, token]) => {
+      const fl = channelFilters(ch), c = col(token), pts = [];
+      for (let i = 0; i <= pw; i += 2) {
+        const f = FMIN * Math.pow(FMAX / FMIN, i / pw);
+        let db = 0; fl.forEach((q) => { db += magDb(q, f); });
+        pts.push([L + i, y(Math.max(-DBR, Math.min(DBR, db)))]);
+      }
+      ctx.beginPath(); ctx.moveTo(pts[0][0], y(0)); pts.forEach((p) => ctx.lineTo(p[0], p[1])); ctx.lineTo(pts[pts.length - 1][0], y(0)); ctx.closePath();
+      ctx.globalAlpha = 0.16; ctx.fillStyle = c; ctx.fill(); ctx.globalAlpha = ch.engage ? 1 : 0.35;
+      ctx.beginPath(); pts.forEach((p, i) => (i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])));
+      ctx.strokeStyle = c; ctx.lineWidth = 2.2; ctx.shadowColor = c; ctx.shadowBlur = 8; ctx.stroke();
+      ctx.shadowBlur = 0; ctx.globalAlpha = 1;
+    });
+    $('key1').textContent = dual ? 'CH 1' : 'STEREO';
+    $('key2wrap').hidden = !dual;
+  }
+  if (window.ResizeObserver) new ResizeObserver(scheduleDraw).observe(canvas); else window.addEventListener('resize', scheduleDraw);
+  try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', scheduleDraw); } catch (e) {}
+
+  /* ---------- controls ---------- */
+  $('modeStereo').onclick = () => { api.setMode('stereo'); tab = 0; render(); };
+  $('modeDual').onclick = () => { api.setMode('dual'); render(); };
+  $('tab0').onclick = () => { tab = 0; render(); };
+  $('tab1').onclick = () => { tab = 1; render(); };
+  function setWood(on) { $('rack').classList.toggle('wood', on); $('woodBtn').setAttribute('aria-pressed', String(on)); $('woodBtn').classList.toggle('primary', on); store.set('eq502p-wood', on); }
+  setWood(store.get('eq502p-wood', true));
+  $('woodBtn').onclick = () => setWood(!$('rack').classList.contains('wood'));
+  $('helloBtn').onclick = () => api.hello();
+  $('clearLog').onclick = () => { logLines.length = 0; renderLogSoon(); };
+  $('recallBtn').onclick = () => { api.recallAll(); toast('כל הערכים נשלחו'); };
+  $('connectBtn').onclick = () => startWebMidi(true);
+
+  // A/B compare
+  let ab = { cur: 'A', other: null };
+  function setAB(which) {
+    if (which === ab.cur) return;
+    const now = api.snapshot();
+    const target = ab.other || now;
+    ab.other = now; ab.cur = which;
+    api.load({ mode: target.mode, channels: target.channels });
+    $('abA').setAttribute('aria-pressed', String(which === 'A')); $('abB').setAttribute('aria-pressed', String(which === 'B'));
+    render(); toast('השוואה: ' + which);
+  }
+  $('abA').onclick = () => setAB('A'); $('abB').onclick = () => setAB('B');
+  $('copyAB').onclick = () => { ab.other = api.snapshot(); toast('ההגדרה הנוכחית הועתקה ל-' + (ab.cur === 'A' ? 'B' : 'A')); };
+
+  // presets
+  let saving = false, activeSlot = 0;
+  function setSaving(on) { saving = on; $('saveMode').classList.toggle('primary', on); $('padsCard').classList.toggle('saving', on); }
+  const slotsEl = $('slots');
+  function drawSlots() {
+    const data = store.get('eq502p-slots', {});
+    slotsEl.innerHTML = '';
+    for (let i = 1; i <= 8; i++) {
+      const b = document.createElement('button'); b.className = 'pad'; b.style.setProperty('--c', 'var(--pad-' + i + ')');
+      const filled = !!data[i];
+      b.innerHTML = '<b>' + i + '</b><small>' + (filled ? (data[i].mode === 'dual' ? 'DUAL' : 'STEREO') : 'ריק') + '</small>';
+      b.setAttribute('aria-label', 'פריסט ' + i + (filled ? '' : ', ריק'));
+      if (filled) b.classList.add('filled');
+      if (activeSlot === i) b.classList.add('active');
+      let press;
+      const save = () => { const d = store.get('eq502p-slots', {}); d[i] = api.snapshot(); store.set('eq502p-slots', d); setSaving(false); activeSlot = i; drawSlots(); toast('נשמר בתא ' + i); };
+      b.addEventListener('pointerdown', () => { press = setTimeout(() => { press = 'done'; save(); }, 600); });
+      b.addEventListener('pointerup', () => { if (press === 'done') return; clearTimeout(press); if (saving) return save(); const d = store.get('eq502p-slots', {}); if (d[i]) { api.load(d[i]); activeSlot = i; drawSlots(); render(); toast('נטען תא ' + i); } else toast('תא ' + i + ' ריק. לחיצה ארוכה שומרת'); });
+      b.addEventListener('pointerleave', () => { if (press !== 'done') clearTimeout(press); });
+      slotsEl.append(b);
+    }
+  }
+  $('saveMode').onclick = () => { setSaving(!saving); if (saving) toast('בחר תא לשמירה'); };
+  drawSlots();
+
+  /* ---------- boot ---------- */
+  const cfg = window.EQ502P_BRIDGE;
+  if (cfg && cfg.phoneUrls && cfg.phoneUrls.length && /^(localhost|127\.)/.test(location.hostname)) {
+    const url = cfg.phoneUrls[0];
+    $('phoneCard').hidden = false; $('phoneUrl').textContent = url;
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+    s.onload = () => { try { new window.QRCode($('qr'), { text: url, width: 132, height: 132 }); } catch (e) {} };
+    s.onerror = () => { $('qr').hidden = true; };
+    document.head.append(s);
+  }
+  if (cfg) startBridge(cfg);
+  else if (navigator.requestMIDIAccess) {
+    startDemo('Chrome תומך ב-USB MIDI. לחץ "התחבר ב-USB"');
+    $('connectBtn').hidden = false;
+    if (navigator.permissions) navigator.permissions.query({ name: 'midi', sysex: true }).then((p) => { if (p.state === 'granted') startWebMidi(); }).catch(() => {});
+  } else startDemo('מצב הדגמה. הדפדפן הזה לא תומך ב-MIDI, השתמש בגשר במחשב');
+})();
+</script>
