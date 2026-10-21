@@ -14,11 +14,12 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const tinyWs = require('./lib/tiny-ws.js');
-const P = require('./public/protocol.js');
+const P = require('./protocol.js');
 
 const PORT = Number(process.env.PORT) || 8502;
 const MOCK = process.argv.includes('--mock');
-const PUBLIC = path.join(__dirname, 'public');
+const ROOT = __dirname;
+const SERVED = new Set(['/index.html', '/protocol.js']); // only the page itself is served
 const STATE_FILE = path.join(__dirname, 'last-state.json');
 
 /* ---------------- MIDI layer ---------------- */
@@ -118,8 +119,9 @@ const server = http.createServer((req, res) => {
     const phoneUrls = lanAddresses().map((ip) => 'http://' + ip + ':' + PORT);
     return res.end('window.EQ502P_BRIDGE = ' + JSON.stringify({ path: '/ws', phoneUrls, mock: MOCK }) + ';');
   }
-  const file = path.normalize(path.join(PUBLIC, url === '/' ? 'index.html' : url));
-  if (!file.startsWith(PUBLIC)) { res.writeHead(403); return res.end(); }
+  const name = url === '/' ? '/index.html' : url;
+  if (!SERVED.has(name)) { res.writeHead(404); return res.end('not found'); }
+  const file = path.join(ROOT, name);
   fs.readFile(file, (err, data) => {
     if (err) { res.writeHead(404); return res.end('not found'); }
     const ext = path.extname(file);

@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert');
-const P = require('../public/protocol.js');
+const P = require('../protocol.js');
 
 test('handshake matches plugin bytes (F0 00 12 34 00 04 F7)', () => {
   assert.deepStrictEqual(P.hello(), [0xf0, 0x00, 0x12, 0x34, 0x00, 0x04, 0xf7]);
