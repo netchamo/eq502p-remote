@@ -10,36 +10,32 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Michroma&family=IBM+Plex+Sans+Hebrew:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
-/* Layout: an engraved rack faceplate per channel (LOW section | HIGH section), controls row-wrapped; phone = one channel with tabs */
+/* Layout: scope on top, then one faceplate per channel: the four main knobs in one row (LOW pair | HIGH pair),
+   each section's switches directly under its knobs. Always dark: a studio tool, independent of the phone theme. */
 :root {
-  --bg: #dfe3e6;          /* bench / page */
-  --plate: #b9c6cf;       /* Pultec blue-grey enamel */
-  --plate-edge: #9eadb8;
-  --engrave: #1f2a33;     /* engraved lettering */
-  --muted: #4c5b67;
-  --knob: #17191b;        /* bakelite knob */
-  --knob-hi: #3a3f44;
-  --track: #8d9ca7;
-  --lamp: #f2a413;        /* amber pilot lamp */
-  --lamp-off: #6f5a2c;
-  --ok: #2f8a4f; --warn: #b7791f; --bad: #b23a3a;
-  --chip: #ffffff99;
-  --wood-a: #8a5530; --wood-b: #6b3d1f; --wood-c: #a26b40; --wood-d: #4f2c15;  /* walnut end cheeks */
-  --scope-bg: #0e1215; --scope-grid: #263038; --scope-zero: #3d4a54; --scope-text: #8a9aa5; --curve-1: #ffb52e; --curve-2: #5fd0e6;
+  --bg: #0f1418;          /* studio, lights down */
+  --plate: #2b3843;       /* Pultec blue-grey enamel, dark */
+  --plate-edge: #1d272f;
+  --engrave: #dfe7ec;     /* engraved lettering */
+  --muted: #9aabb8;
+  --knob: #0b0c0d;        /* bakelite knob */
+  --knob-hi: #4a5158;
+  --track: #50606c;
+  --lamp: #ffb52e;        /* amber pilot lamp */
+  --lamp-off: #5a4a26;
+  --ok: #4cc176; --warn: #e2a84b; --bad: #ec6b6b;
+  --chip: #00000040;
+  --wood-a: #84502c; --wood-b: #774626; --wood-c: #925c35; --wood-d: #6a3c1f;  /* walnut lunchbox */
+  --scope-bg: #0a0d10; --scope-grid: #263038; --scope-zero: #3d4a54; --scope-text: #8a9aa5; --curve-1: #ffb52e; --curve-2: #5fd0e6;
   --pad-1: #d64b45; --pad-2: #e8832a; --pad-3: #e3b62f; --pad-4: #47a865; --pad-5: #2a9d97; --pad-6: #3a76d0; --pad-7: #7657c4; --pad-8: #c9508f;
-  --rack-bg: #2a2e32; --rail: #8e969c; --rail-hole: #3b4146;                  /* lunchbox chassis */
+  --rack-bg: #15191c;
+  --knob-size: 96px;
   --font-plate: "Michroma", "Eurostile", "Arial Narrow", sans-serif;
   --font-body: "IBM Plex Sans Hebrew", "Segoe UI", "Arial Hebrew", system-ui, sans-serif;
   --font-data: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: dark;
 }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
-  --bg: #0f1418; --plate: #2b3843; --plate-edge: #1d272f; --engrave: #dfe7ec; --muted: #9aabb8;
-  --knob: #0b0c0d; --knob-hi: #4a5158; --track: #50606c; --lamp: #ffb52e; --lamp-off: #5a4a26;
-  --ok: #4cc176; --warn: #e2a84b; --bad: #ec6b6b; --chip: #00000040; color-scheme: dark } }
-:root[data-theme="dark"] {
-  --bg: #0f1418; --plate: #2b3843; --plate-edge: #1d272f; --engrave: #dfe7ec; --muted: #9aabb8;
-  --knob: #0b0c0d; --knob-hi: #4a5158; --track: #50606c; --lamp: #ffb52e; --lamp-off: #5a4a26;
-  --ok: #4cc176; --warn: #e2a84b; --bad: #ec6b6b; --chip: #00000040; color-scheme: dark }
+@media (max-width: 600px) { :root { --knob-size: 68px; } }
 
 [hidden] { display: none !important; }
 html, body { min-height: 100%; }
@@ -77,64 +73,70 @@ button { font: inherit; color: inherit; cursor: pointer; }
 
 /* faceplates */
 .seg { direction: ltr; }
-/* Wooden 500-series lunchbox: walnut cheeks left/right, steel rails with rack holes top/bottom */
-.rack { position: relative; }
-.rack.wood { direction: ltr; background: var(--rack-bg); border-radius: 6px; padding: 22px 34px;
-  box-shadow: 0 10px 24px #0003, inset 0 0 0 1px #0006; }
-.rack.wood::before, .rack.wood::after { content: ""; position: absolute; top: 0; bottom: 0; width: 24px; border-radius: 6px;
+.btn.small { padding: 5px 10px; font-size: 12px; }
+/* control rows: row 1 = mode (+ channel tabs, space reserved so nothing jumps), row 2 = compare + frame */
+.bar { justify-content: center; }
+
+/* Wooden 500-series lunchbox: solid walnut frame all around, dark recess inside */
+.rack { direction: ltr; }
+.rack.wood { border-radius: 10px; padding: 16px;
   background:
-    linear-gradient(90deg, #0000004d, #ffffff14 35%, #00000000 60%, #00000059),
-    repeating-linear-gradient(90deg, var(--wood-a) 0 3px, var(--wood-b) 3px 4px, var(--wood-c) 4px 7px, var(--wood-a) 7px 9px, var(--wood-d) 9px 10px, var(--wood-c) 10px 13px),
-    var(--wood-a); }
-.rack.wood::before { left: 0; } .rack.wood::after { right: 0; }
-.rack.wood .rail { position: absolute; left: 24px; right: 24px; height: 14px; background-color: var(--rail);
-  background-image: radial-gradient(circle, var(--rail-hole) 2.2px, transparent 2.8px); background-size: 22px 14px; background-position: center; }
-.rack.wood .rail.top { top: 0; } .rack.wood .rail.bottom { bottom: 0; }
-.rack:not(.wood) .rail { display: none; }
+    linear-gradient(180deg, #ffffff1a, #00000000 18%, #00000000 82%, #00000059),
+    repeating-linear-gradient(91deg, var(--wood-a) 0 9px, var(--wood-b) 9px 11px, var(--wood-c) 11px 24px, var(--wood-a) 24px 31px, var(--wood-d) 31px 32px, var(--wood-c) 32px 45px, var(--wood-b) 45px 49px),
+    radial-gradient(ellipse at 30% 40%, #ffffff10, transparent 60%),
+    var(--wood-a);
+  box-shadow: 0 12px 28px #0008, inset 0 1px 0 #ffffff2e, inset 0 -2px 0 #00000059; }
+.rack.wood .plates { background: var(--rack-bg); border-radius: 4px; padding: 10px; box-shadow: inset 0 2px 8px #000c, inset 0 0 0 1px #000; }
 .rack.wood .plate { box-shadow: 0 2px 0 #0007, 0 6px 14px #0005; }
-@media (max-width: 520px) { .rack.wood { padding: 18px 18px; } .rack.wood::before, .rack.wood::after { width: 12px; } .rack.wood .rail { left: 12px; right: 12px; height: 10px; background-size: 18px 10px; } }
-.plates { direction: ltr; display: grid; grid-template-columns: 1fr; gap: 14px; }
+@media (max-width: 600px) { .rack.wood { padding: 10px; border-radius: 8px; } .rack.wood .plates { padding: 6px; } }
+
+.plates { direction: ltr; display: grid; grid-template-columns: 1fr; gap: 12px; }
 .plates.dual { grid-template-columns: repeat(auto-fit, minmax(min(100%, 540px), 1fr)); }
 .plate { direction: ltr; position: relative; background: var(--plate); border: 1px solid var(--plate-edge); border-radius: 4px;
-  padding: 18px 18px 14px; display: flex; flex-direction: column; gap: 14px;
-  background-image: radial-gradient(circle at 12px 12px, var(--plate-edge) 3px, transparent 4px), radial-gradient(circle at calc(100% - 12px) 12px, var(--plate-edge) 3px, transparent 4px); }
-.plate-head { display: flex; align-items: center; gap: 12px; }
+  padding: 14px 16px 14px; display: flex; flex-direction: column; gap: 10px;
+  background-image: radial-gradient(circle at 10px 10px, var(--plate-edge) 3px, transparent 4px), radial-gradient(circle at calc(100% - 10px) 10px, var(--plate-edge) 3px, transparent 4px); }
+@media (max-width: 600px) { .plate { padding: 12px 8px; } }
+.plate-head { display: flex; align-items: center; gap: 12px; padding-inline: 6px; }
 .plate-head h2 { margin: 0; font-family: var(--font-plate); font-size: 13px; letter-spacing: .22em; font-weight: 400; }
 .lamp { display: inline-flex; align-items: center; gap: 10px; margin-left: auto; border: 1px solid var(--plate-edge); background: var(--chip); border-radius: 999px; padding: 6px 14px 6px 8px; font-family: var(--font-plate); font-size: 10px; letter-spacing: .15em; }
 .lamp i { width: 18px; height: 18px; border-radius: 50%; background: var(--lamp-off); box-shadow: inset 0 -2px 3px #0005; transition: background .15s, box-shadow .15s; }
 .lamp[aria-pressed="true"] i { background: var(--lamp); box-shadow: 0 0 12px var(--lamp), inset 0 -2px 3px #0003; }
-.sections { display: grid; grid-template-columns: 1fr; gap: 14px; }
-@media (min-width: 760px) { .plates:not(.dual) .sections { grid-template-columns: 2fr 3fr; } }
-.section { border-top: 1px solid var(--plate-edge); padding-top: 10px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
-.section > h3 { margin: 0; font-family: var(--font-plate); font-size: 10px; letter-spacing: .3em; color: var(--muted); font-weight: 400; }
-.row { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: flex-start; justify-content: space-around; }
+
+/* LOW | HIGH columns; the knob pairs sit on one line across both */
+.eqgrid { display: grid; grid-template-columns: 2fr 3fr; }
+@media (max-width: 600px) { .eqgrid { grid-template-columns: 1fr 1fr; } }
+.col { display: flex; flex-direction: column; gap: 10px; min-width: 0; padding: 8px 10px 4px; }
+.col.high { border-left: 1px solid var(--plate-edge); }
+@media (max-width: 600px) { .col { padding: 6px 4px 2px; gap: 8px; } }
+.col > h3 { margin: 0; font-family: var(--font-plate); font-size: 10px; letter-spacing: .28em; color: var(--muted); font-weight: 400; text-align: center; }
+@media (max-width: 600px) { .col > h3 { font-size: 8.5px; letter-spacing: .18em; } }
+.knobpair { display: flex; justify-content: space-around; gap: 4px; }
+.subs { display: flex; flex-direction: column; gap: 10px; border-top: 1px dashed var(--plate-edge); padding-top: 10px; }
 
 .ctl { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; }
 .ctl .lbl { font-family: var(--font-plate); font-size: 9.5px; letter-spacing: .16em; text-align: center; }
 .ctl .val { font-family: var(--font-data); font-size: 13px; font-variant-numeric: tabular-nums; color: var(--muted); }
+@media (max-width: 600px) { .ctl .lbl { font-size: 7.5px; letter-spacing: .06em; } .ctl .val { font-size: 12px; } }
 
-.knob { position: relative; width: 104px; height: 104px; touch-action: pan-y; user-select: none; -webkit-user-select: none; border-radius: 50%; }
+.knob { position: relative; width: var(--knob-size); height: var(--knob-size); margin: 6px; touch-action: pan-y; user-select: none; -webkit-user-select: none; border-radius: 50%; }
 .knob .hit { position: absolute; inset: 17%; border-radius: 50%; touch-action: none; cursor: ns-resize; }
 .knob svg { width: 100%; height: 100%; display: block; overflow: visible; }
 .knob .tick { stroke: var(--engrave); stroke-width: 1.2; }
-.knob .num { fill: var(--engrave); font-family: var(--font-data); font-size: 7px; text-anchor: middle; dominant-baseline: middle; }
+.knob .num { fill: var(--engrave); font-family: var(--font-data); font-size: 9px; text-anchor: middle; dominant-baseline: middle; }
 .knob .body { fill: var(--knob); }
 .knob .cap { fill: var(--knob-hi); }
 .knob .ptr { stroke: #f4f1e8; stroke-width: 3; stroke-linecap: round; }
 .knob .ring { fill: none; stroke: var(--track); stroke-width: 2.5; }
 .knob .arc { fill: none; stroke: var(--lamp); stroke-width: 2.5; stroke-linecap: round; }
 
-.steps { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; }
-.steps.one-line { flex-wrap: nowrap; gap: 3px; }
-.steps.one-line button { min-width: 0; flex: 1 1 0; width: 40px; padding: 0 2px; }
-.ctl.wide { width: 100%; max-width: 380px; }
-.ctl.wide .steps { width: 100%; }
-.row.spaced { padding-top: 6px; border-top: 1px dashed var(--plate-edge); }
-.steps button { min-width: 40px; min-height: 40px; padding: 0 8px; border: 1px solid var(--plate-edge); background: var(--chip); border-radius: 5px; font-family: var(--font-data); font-size: 13px; font-variant-numeric: tabular-nums; }
+.steps { display: grid; grid-template-columns: repeat(var(--n, 4), minmax(0, 1fr)); gap: 4px; width: 100%; }
+.steps[data-n="7"] { --n: 7; } .steps[data-n="3"] { --n: 3; }
+@media (max-width: 600px) { .steps[data-n="7"] { --n: 4; } }
+.steps button { min-width: 0; min-height: 38px; padding: 0 2px; border: 1px solid var(--plate-edge); background: var(--chip); border-radius: 5px; font-family: var(--font-data); font-size: 13px; font-variant-numeric: tabular-nums; }
 .steps button[aria-pressed="true"] { background: var(--knob); color: #f4f1e8; border-color: var(--knob); }
 
 .tabs { display: none; }
-@media (max-width: 1099px) { .plates.dual { grid-template-columns: 1fr; } .plates.dual.tabbed .plate[data-hide="1"] { display: none; } .tabs.show { display: inline-flex; } }
+@media (max-width: 1099px) { .plates.dual { grid-template-columns: 1fr; } .plates.dual.tabbed .plate[data-hide="1"] { display: none; } .tabs { display: inline-flex; } .tabs.off { visibility: hidden; } }
 
 /* lower bench */
 .bench { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 14px; }
@@ -183,16 +185,18 @@ button { font: inherit; color: inherit; cursor: pointer; }
       <button id="modeStereo" aria-pressed="true">STEREO</button>
       <button id="modeDual" aria-pressed="false">DUAL MONO</button>
     </div>
-    <div class="seg tabs" id="tabs" role="group" aria-label="ערוץ">
+    <div class="seg tabs off" id="tabs" role="group" aria-label="ערוץ">
       <button id="tab0" aria-pressed="true">CH 1</button>
       <button id="tab1" aria-pressed="false">CH 2</button>
     </div>
+  </div>
+  <div class="bar">
     <div class="seg" role="group" aria-label="השוואה">
       <button id="abA" aria-pressed="true">A</button>
       <button id="abB" aria-pressed="false">B</button>
     </div>
     <button class="btn" id="copyAB">A → B</button>
-    <button class="btn" id="woodBtn" aria-pressed="true">מסגרת עץ</button>
+    <button class="btn small" id="woodBtn" aria-pressed="true">מסגרת עץ</button>
   </div>
 
   <section class="scope" aria-label="תצוגת עקומת EQ">
@@ -205,9 +209,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
   </section>
 
   <div class="rack wood" id="rack">
-    <div class="rail top"></div>
     <main class="plates" id="plates"></main>
-    <div class="rail bottom"></div>
   </div>
 
   <section class="bench">
@@ -367,7 +369,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
     for (let i = 0; i <= 10; i++) {
       const a = (-135 + i * 27) * Math.PI / 180, r1 = 44, r2 = i % 5 === 0 ? 49 : 47;
       ticks.push('<line class="tick" x1="' + (50 + r1 * Math.sin(a)).toFixed(2) + '" y1="' + (50 - r1 * Math.cos(a)).toFixed(2) + '" x2="' + (50 + r2 * Math.sin(a)).toFixed(2) + '" y2="' + (50 - r2 * Math.cos(a)).toFixed(2) + '"/>');
-      if (i % 2 === 0) ticks.push('<text class="num" x="' + (50 + 56 * Math.sin(a)).toFixed(2) + '" y="' + (50 - 56 * Math.cos(a)).toFixed(2) + '">' + i + '</text>');
+      if (i % 5 === 0) ticks.push('<text class="num" x="' + (50 + 56 * Math.sin(a)).toFixed(2) + '" y="' + (50 - 56 * Math.cos(a)).toFixed(2) + '">' + i + '</text>');
     }
     k.innerHTML = '<svg viewBox="0 0 100 100" aria-hidden="true">' + ticks.join('') +
       '<circle class="ring" cx="50" cy="50" r="40"/><path class="arc" d=""/>' +
@@ -409,8 +411,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
 
   function steps(chIndex, key, oneLine) {
     const def = C[key];
-    const wrap = document.createElement('div'); wrap.className = 'ctl' + (oneLine ? ' wide' : '');
-    const row = document.createElement('div'); row.className = 'steps' + (oneLine ? ' one-line' : ''); row.setAttribute('role', 'group'); row.setAttribute('aria-label', def.label);
+    const wrap = document.createElement('div'); wrap.className = 'ctl wide';
+    const row = document.createElement('div'); row.className = 'steps'; row.dataset.n = def.names.length; row.setAttribute('role', 'group'); row.setAttribute('aria-label', def.label);
     const btns = def.names.map((n, i) => {
       const b = document.createElement('button'); b.textContent = n; b.setAttribute('aria-pressed', 'false');
       b.addEventListener('click', () => { api.set(chIndex, key, i); upd(i); scheduleDraw(); });
@@ -432,19 +434,18 @@ button { font: inherit; color: inherit; cursor: pointer; }
     ui[chIndex].engage = { update: (v) => lamp.setAttribute('aria-pressed', String(!!v)) };
     ui[chIndex].title = h;
     head.append(h, lamp);
-    const secs = document.createElement('div'); secs.className = 'sections';
-    const low = document.createElement('div'); low.className = 'section'; low.innerHTML = '<h3>LOW FREQUENCY</h3>';
-    const lr1 = document.createElement('div'); lr1.className = 'row'; lr1.append(steps(chIndex, 'loCps'));
-    const lr2 = document.createElement('div'); lr2.className = 'row'; lr2.append(knob(chIndex, 'loBoost'), knob(chIndex, 'loAtten'));
-    low.append(lr1, lr2);
-    const high = document.createElement('div'); high.className = 'section'; high.innerHTML = '<h3>HIGH FREQUENCY</h3>';
-    const hr1 = document.createElement('div'); hr1.className = 'row'; hr1.append(steps(chIndex, 'hiKcsBoost', true));
-    const hrBw = document.createElement('div'); hrBw.className = 'row spaced'; hrBw.append(steps(chIndex, 'hiBandwidth'));
-    const hr2 = document.createElement('div'); hr2.className = 'row'; hr2.append(knob(chIndex, 'hiBoost'), knob(chIndex, 'hiAtten'));
-    const hr3 = document.createElement('div'); hr3.className = 'row'; hr3.append(steps(chIndex, 'hiKcsAtten'));
-    high.append(hr1, hrBw, hr2, hr3);
-    secs.append(low, high);
-    el.append(head, secs);
+    // Four main knobs on one line (LOW pair | HIGH pair), each section's switches under its own knobs.
+    const grid = document.createElement('div'); grid.className = 'eqgrid';
+    const low = document.createElement('div'); low.className = 'col low'; low.innerHTML = '<h3>LOW FREQUENCY</h3>';
+    const lk = document.createElement('div'); lk.className = 'knobpair'; lk.append(knob(chIndex, 'loBoost'), knob(chIndex, 'loAtten'));
+    const ls = document.createElement('div'); ls.className = 'subs'; ls.append(steps(chIndex, 'loCps'));
+    low.append(lk, ls);
+    const high = document.createElement('div'); high.className = 'col high'; high.innerHTML = '<h3>HIGH FREQUENCY</h3>';
+    const hk = document.createElement('div'); hk.className = 'knobpair'; hk.append(knob(chIndex, 'hiBoost'), knob(chIndex, 'hiAtten'));
+    const hs = document.createElement('div'); hs.className = 'subs'; hs.append(steps(chIndex, 'hiKcsBoost'), steps(chIndex, 'hiBandwidth'), steps(chIndex, 'hiKcsAtten'));
+    high.append(hk, hs);
+    grid.append(low, high);
+    el.append(head, grid);
     return el;
   }
 
@@ -461,7 +462,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
     platesEl.classList.add('tabbed');
     plates[1].hidden = !dual;
     plates.forEach((p, i) => { p.dataset.hide = dual && i !== tab ? '1' : '0'; });
-    $('tabs').classList.toggle('show', dual);
+    $('tabs').classList.toggle('off', !dual);
     $('tab0').setAttribute('aria-pressed', String(tab === 0)); $('tab1').setAttribute('aria-pressed', String(tab === 1));
     ui[0].title.textContent = dual ? 'CHANNEL 1' : 'STEREO';
     [0, 1].forEach((c) => Object.keys(C).forEach((k) => ui[c][k] && ui[c][k].update(st.channels[c][k])));
@@ -556,8 +557,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
   $('modeDual').onclick = () => { api.setMode('dual'); render(); };
   $('tab0').onclick = () => { tab = 0; render(); };
   $('tab1').onclick = () => { tab = 1; render(); };
-  function setWood(on) { $('rack').classList.toggle('wood', on); $('woodBtn').setAttribute('aria-pressed', String(on)); $('woodBtn').classList.toggle('primary', on); store.set('eq502p-wood', on); }
-  setWood(store.get('eq502p-wood', true));
+  function setWood(on) { $('rack').classList.toggle('wood', on); $('woodBtn').setAttribute('aria-pressed', String(on)); $('woodBtn').classList.toggle('primary', on); store.set('eq502p-wood-v2', on); }
+  setWood(store.get('eq502p-wood-v2', true));
   $('woodBtn').onclick = () => setWood(!$('rack').classList.contains('wood'));
   $('helloBtn').onclick = () => api.hello();
   $('clearLog').onclick = () => { logLines.length = 0; renderLogSoon(); };
