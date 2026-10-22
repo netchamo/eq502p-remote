@@ -3,6 +3,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#2b3843">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Michroma&family=IBM+Plex+Sans+Hebrew:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -598,6 +602,11 @@ button { font: inherit; color: inherit; cursor: pointer; }
   }
   $('saveMode').onclick = () => { setSaving(!saving); if (saving) toast('בחר תא לשמירה'); };
   drawSlots();
+
+  /* ---------- installable app: offline copy, newest version on every launch ---------- */
+  if ('serviceWorker' in navigator && location.protocol === 'https:') {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
 
   /* ---------- boot ---------- */
   const cfg = window.EQ502P_BRIDGE;

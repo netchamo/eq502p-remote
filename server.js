@@ -19,7 +19,8 @@ const P = require('./protocol.js');
 const PORT = Number(process.env.PORT) || 8502;
 const MOCK = process.argv.includes('--mock');
 const ROOT = __dirname;
-const SERVED = new Set(['/index.html', '/protocol.js']); // only the page itself is served
+// only the page itself is served
+const SERVED = new Set(['/index.html', '/protocol.js', '/manifest.webmanifest', '/icons/icon-192.png', '/icons/icon-512.png', '/icons/maskable-512.png', '/icons/apple-touch-icon.png']);
 const STATE_FILE = path.join(__dirname, 'last-state.json');
 
 /* ---------------- MIDI layer ---------------- */
@@ -111,7 +112,7 @@ const midiIo = createMidi(
 );
 
 /* ---------------- HTTP + WebSocket ---------------- */
-const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml' };
+const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml', '.webmanifest': 'application/manifest+json' };
 const server = http.createServer((req, res) => {
   const url = decodeURIComponent((req.url || '/').split('?')[0]);
   if (url === '/bridge-config.js') {
