@@ -161,19 +161,23 @@
     const send = opts.send;
     const onChange = opts.onChange || function () {};
     const log = opts.log || function () {};
-    const state = { mode: 'stereo', unit: null, channels: [defaultChannel(), defaultChannel()] };
+    // armed: commands reach the device. A new connection starts disarmed; nothing is sent
+    // until the device reports its own settings or the user confirms (arm).
+    const state = { mode: 'stereo', unit: null, channels: [defaultChannel(), defaultChannel()], armed: true, needConfirm: false };
     const pending = new Map();
     let timer = null;
 
     function unit() { return state.unit == null ? 0 : state.unit; }
     function out(bytes, note) { log('out', bytes, note); send(bytes); }
+    function outArmed(bytes, note) { if (state.armed) out(bytes, note); }
 
     function flush() {
       timer = null;
-      pending.forEach((bytes) => out(bytes));
+      pending.forEach((bytes) => outArmed(bytes));
       pending.clear();
     }
     function queue(key, bytes) {
+      if (!state.armed) return; // held in the app until the user confirms
       pending.set(key, bytes);
       if (!timer) timer = setTimeout(flush, 20); // coalesce knob drags
     }
@@ -197,6 +201,7 @@
 
     function recallAll() {
       pending.clear();
+      if (!state.armed) return;
       fullRecall(unit(), state.mode, state.channels).forEach((m) => out(m, 'recall'));
     }
 
@@ -208,14 +213,33 @@
     }
 
     let paramReports = 0;
-    function hello() { paramReports = 0; out(helloFrame(), 'handshake'); }
+    function hello() {
+      paramReports = 0; state.armed = false; state.needConfirm = false;
+      pending.clear();
+      out(helloFrame(), 'handshake');
+    }
+
+    /* User confirmed: from now on every change goes straight to the device.
+       apply=true also sends the whole app state once. */
+    function arm(apply) {
+      state.armed = true; state.needConfirm = false;
+      if (apply) recallAll();
+      onChange(state, { keys: ['armed'], source: 'local' });
+    }
 
     /* Call ~1 s after hello(). If the device reported its own settings, show those
-       (the device is the truth). Otherwise push the last saved session to it. */
+       (the device is the truth) and go live. Otherwise send nothing and wait for the
+       user to confirm, so a connection never overwrites the device by itself. */
     function syncAfterConnect() {
-      if (paramReports >= 3) { log('in', [], 'device state adopted (' + paramReports + ' values)'); return 'device'; }
-      recallAll();
-      return 'saved';
+      if (paramReports >= 3) {
+        log('in', [], 'device state adopted (' + paramReports + ' values)');
+        state.armed = true; state.needConfirm = false;
+        onChange(state, { keys: ['armed'], source: 'device' });
+        return 'device';
+      }
+      state.armed = false; state.needConfirm = true;
+      onChange(state, { keys: ['armed'], source: 'local' });
+      return 'confirm';
     }
 
     function receive(bytes) {
@@ -240,7 +264,7 @@
 
     function snapshot() { return JSON.parse(JSON.stringify(state)); }
 
-    return { state, set, setMode, load, recallAll, hello, receive, snapshot, syncAfterConnect };
+    return { state, set, setMode, load, recallAll, hello, receive, snapshot, syncAfterConnect, arm };
   }
 
   const helloFrame = hello;

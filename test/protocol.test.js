@@ -61,7 +61,7 @@ test('stereo sends only ch1, dual uses cmd 08 for ch2', () => {
   assert.strictEqual(P.fullRecall(1, 'stereo', [ch, ch]).length, 9);
 });
 
-test('after connect: adopt device values if it reports them, else push saved session', () => {
+test('after connect: adopt device values if it reports them, else wait for confirmation', () => {
   const sent = [];
   const c = P.createController({ send: (b) => sent.push(b) });
   c.state.channels[0].loBoost = 120; // saved session
@@ -77,5 +77,24 @@ test('after connect: adopt device values if it reports them, else push saved ses
   const c2 = P.createController({ send: (b) => sent.push(b) });
   c2.hello();
   c2.receive([0xf0, 0, 0x12, 0x34, 5, 1, P.ID.MODE, 4, 0, 0xf7]); // only unit/mode reply
-  assert.strictEqual(c2.syncAfterConnect(), 'saved');
+  const sentBefore = sent.length;
+  assert.strictEqual(c2.syncAfterConnect(), 'confirm');
+  assert.strictEqual(sent.length, sentBefore, 'nothing is sent before confirmation');
+  c2.set(0, 'loBoost', 50);
+  assert.strictEqual(sent.length, sentBefore, 'knob changes are held before confirmation');
+  c2.arm(false);
+  assert.strictEqual(sent.length, sentBefore, 'live mode alone sends nothing');
+  c2.set(0, 'hiBoost', 70);
+});
+
+test('confirm with apply sends the whole app state once, then changes go live', (t, done) => {
+  const sent = [];
+  const c = P.createController({ send: (b) => sent.push(b) });
+  c.hello();
+  c.syncAfterConnect();
+  const base = sent.length;
+  c.arm(true);
+  assert.strictEqual(sent.length, base + P.fullRecall(0, 'stereo', c.state.channels).length);
+  c.set(0, 'loBoost', 99);
+  setTimeout(() => { assert.strictEqual(sent.length, base + P.fullRecall(0, 'stereo', c.state.channels).length + 1); done(); }, 40);
 });

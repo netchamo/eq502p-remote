@@ -102,10 +102,10 @@ const midiIo = createMidi(
     if (connected) {
       ctl.state.unit = null;
       ctl.hello();
-      // wait for the device to answer; adopt its settings if it reports them, else restore the saved session
+      // wait for the device to answer; adopt its settings if it reports them, else send nothing until a phone confirms
       setTimeout(() => {
         const src = ctl.syncAfterConnect();
-        console.log(src === 'device' ? '  ↺ showing the settings reported by the device' : '  ↺ restored last saved session to the device');
+        console.log(src === 'device' ? '  ↺ showing the settings reported by the device' : '  ⏸ nothing sent; waiting for confirmation in the app');
       }, 900);
     }
   }
@@ -144,6 +144,7 @@ tinyWs.attach(server, '/ws', (ws) => {
     else if (m.type === 'load' && m.snapshot) ctl.load(m.snapshot, 'remote');
     else if (m.type === 'recall') ctl.recallAll();
     else if (m.type === 'hello') ctl.hello();
+    else if (m.type === 'arm') ctl.arm(!!m.apply);
   });
 });
 

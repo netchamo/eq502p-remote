@@ -167,6 +167,13 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .toast { position: fixed; inset: auto 0 0 0; display: flex; justify-content: center; pointer-events: none; padding: 0 16px calc(16px + env(safe-area-inset-bottom, 0px)); }
 .toast span { background: var(--engrave); color: var(--bg); padding: 8px 16px; border-radius: 6px; font-size: 14px; opacity: 0; transition: opacity .2s; }
 .toast span.show { opacity: 1; }
+.armbar { position: fixed; inset: auto 0 0 0; z-index: 20; display: flex; justify-content: center; padding: 0 12px calc(12px + env(safe-area-inset-bottom, 0px)); }
+.armbar[hidden] { display: none; }
+.armbar > div { max-width: 640px; width: 100%; display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; border-radius: 10px; background: var(--plate); border: 1px solid var(--lamp); box-shadow: 0 10px 30px #000a; }
+.armbar b { color: var(--lamp); font-size: 15px; }
+.armbar p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.45; }
+.armbar .row { display: flex; gap: 8px; flex-wrap: wrap; }
+.armbar .row .btn { flex: 1 1 200px; min-height: 44px; font-size: 14px; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 
@@ -232,6 +239,11 @@ button { font: inherit; color: inherit; cursor: pointer; }
     </div>
   </section>
 </div>
+<div class="armbar" id="armBar" role="alertdialog" aria-labelledby="armTitle" hidden><div>
+  <b id="armTitle">המכשיר מחובר. שום דבר לא נשלח אליו עד שתבחר</b>
+  <p>המכשיר לא דיווח את ההגדרות שלו, כך שהוא נשאר בדיוק כמו שהוא. שינויים שתעשה עכשיו נשמרים באפליקציה בלבד. אחרי הבחירה, כל סיבוב נשלח ישר למכשיר.</p>
+  <div class="row"><button class="btn primary" id="armApply">החל את האפליקציה על המכשיר</button><button class="btn" id="armLive">שליטה חיה בלי לשלוח הכל</button></div>
+</div></div>
 <div class="toast" aria-live="polite"><span id="toast"></span></div>
 
 <script src="protocol.js"></script>
@@ -313,15 +325,16 @@ button { font: inherit; color: inherit; cursor: pointer; }
       if (input) input.onmidimessage = (e) => { if (e.data[0] === 0xf0) api.receive(e.data); };
       if (output) {
         api.state.unit = null;
+        devOn = true;
         setStatus('on', 'מחובר: ' + output.name);
         api.hello();
         setTimeout(() => {
           if (api.state.unit == null) log('in', '(no reply yet)', 'אין תשובה ללחיצת היד; שולח ליחידה 0');
           const src = api.syncAfterConnect();
-          toast(src === 'device' ? 'מוצגות ההגדרות שהמכשיר דיווח' : 'ההגדרות האחרונות שנשמרו נשלחו למכשיר');
+          toast(src === 'device' ? 'מוצגות ההגדרות שהמכשיר דיווח' : 'לא נשלח כלום למכשיר. בחר איך להמשיך');
           render({ keys: ['*'] });
         }, 900);
-      } else setStatus('off', 'Chrome מוכן. חבר את ה-EQ502P ב-USB');
+      } else { devOn = false; updateArmBar(); setStatus('off', 'Chrome מוכן. חבר את ה-EQ502P ב-USB'); }
     }
     access.onstatechange = scan;
     scan();
@@ -338,6 +351,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
       load(snap) { sendWs({ type: 'load', snapshot: snap }); },
       recallAll() { sendWs({ type: 'recall' }); },
       hello() { sendWs({ type: 'hello' }); },
+      arm(apply) { sendWs({ type: 'arm', apply: !!apply }); },
       snapshot() { return JSON.parse(JSON.stringify(st)); },
     };
     function connect() {
@@ -346,8 +360,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
       ws.onclose = () => { setStatus('off', 'החיבור למחשב נותק, מנסה שוב…'); setTimeout(connect, 1500); };
       ws.onmessage = (e) => {
         const m = JSON.parse(e.data);
-        if (m.type === 'state') { st.mode = m.state.mode; st.unit = m.state.unit; st.channels = m.state.channels; render({ keys: ['*'], source: 'bridge' }); }
-        else if (m.type === 'device') setStatus(m.connected ? 'on' : 'off', m.connected ? 'מחובר דרך המחשב: ' + m.name : 'המחשב פעיל, ה-EQ502P לא מחובר');
+        if (m.type === 'state') { st.mode = m.state.mode; st.unit = m.state.unit; st.channels = m.state.channels; st.armed = m.state.armed; st.needConfirm = m.state.needConfirm; render({ keys: ['*'], source: 'bridge' }); }
+        else if (m.type === 'device') { devOn = !!m.connected; updateArmBar(); } if (m.type === 'device') setStatus(m.connected ? 'on' : 'off', m.connected ? 'מחובר דרך המחשב: ' + m.name : 'המחשב פעיל, ה-EQ502P לא מחובר');
         else if (m.type === 'log') log(m.dir, m.hex, m.note);
       };
     }
@@ -453,8 +467,11 @@ button { font: inherit; color: inherit; cursor: pointer; }
   const plates = [plate(0), plate(1)];
   platesEl.append(...plates);
 
+  let devOn = false;
+  function updateArmBar() { $('armBar').hidden = !(api && devOn && api.state.needConfirm); }
   function render() {
     if (!api) return;
+    updateArmBar();
     const st = api.state, dual = st.mode === 'dual';
     $('modeStereo').setAttribute('aria-pressed', String(!dual));
     $('modeDual').setAttribute('aria-pressed', String(dual));
@@ -562,7 +579,9 @@ button { font: inherit; color: inherit; cursor: pointer; }
   $('woodBtn').onclick = () => setWood(!$('rack').classList.contains('wood'));
   $('helloBtn').onclick = () => api.hello();
   $('clearLog').onclick = () => { logLines.length = 0; renderLogSoon(); };
-  $('recallBtn').onclick = () => { api.recallAll(); toast('כל הערכים נשלחו'); };
+  $('recallBtn').onclick = () => { if (api.state.needConfirm) api.arm(true); else api.recallAll(); toast('כל הערכים נשלחו'); };
+  $('armApply').onclick = () => { api.arm(true); render(); toast('ההגדרות נשלחו. מעכשיו כל שינוי עובר ישר למכשיר'); };
+  $('armLive').onclick = () => { api.arm(false); render(); toast('שליטה חיה. כל סיבוב נשלח למכשיר'); };
   $('connectBtn').onclick = () => startWebMidi(true);
 
   // A/B compare
