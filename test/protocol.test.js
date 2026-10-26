@@ -61,40 +61,47 @@ test('stereo sends only ch1, dual uses cmd 08 for ch2', () => {
   assert.strictEqual(P.fullRecall(1, 'stereo', [ch, ch]).length, 9);
 });
 
-test('after connect: adopt device values if it reports them, else wait for confirmation', () => {
+test('connect never sends settings by itself; device reports are shown', (t, done) => {
   const sent = [];
   const c = P.createController({ send: (b) => sent.push(b) });
   c.state.channels[0].loBoost = 120; // saved session
   c.hello();
+  assert.strictEqual(c.state.armed, false);
   c.receive([0xf0, 0, 0x12, 0x34, 5, 1, P.ID.LO_BOOST, 0x48, 1, 0xf7]);
   c.receive([0xf0, 0, 0x12, 0x34, 5, 1, P.ID.HI_BOOST, 10, 0, 0xf7]);
   c.receive([0xf0, 0, 0x12, 0x34, 5, 1, P.ID.MODE, 4, 0, 0xf7]);
-  const before = sent.length;
-  assert.strictEqual(c.syncAfterConnect(), 'device');
-  assert.strictEqual(sent.length, before);
   assert.strictEqual(c.state.channels[0].loBoost, 200);
-
-  const c2 = P.createController({ send: (b) => sent.push(b) });
-  c2.hello();
-  c2.receive([0xf0, 0, 0x12, 0x34, 5, 1, P.ID.MODE, 4, 0, 0xf7]); // only unit/mode reply
-  const sentBefore = sent.length;
-  assert.strictEqual(c2.syncAfterConnect(), 'confirm');
-  assert.strictEqual(sent.length, sentBefore, 'nothing is sent before confirmation');
-  c2.set(0, 'loBoost', 50);
-  assert.strictEqual(sent.length, sentBefore, 'knob changes are held before confirmation');
-  c2.arm(false);
-  assert.strictEqual(sent.length, sentBefore, 'live mode alone sends nothing');
-  c2.set(0, 'hiBoost', 70);
+  c.set(0, 'loBoost', 50);
+  setTimeout(() => {
+    assert.strictEqual(sent.length, 1, 'only the handshake went out');
+    assert.deepStrictEqual(c.state.lastRead && [c.state.lastRead.ok, c.state.lastRead.count], [true, 3]);
+    done();
+  }, 950);
 });
 
-test('confirm with apply sends the whole app state once, then changes go live', (t, done) => {
+test('no reply: request reports failure', (t, done) => {
+  const c = P.createController({ send: () => {} });
+  c.hello();
+  setTimeout(() => { assert.strictEqual(c.state.lastRead.ok, false); done(); }, 950);
+});
+
+test('live control: off holds changes, on sends them, apply sends everything once', (t, done) => {
   const sent = [];
   const c = P.createController({ send: (b) => sent.push(b) });
   c.hello();
-  c.syncAfterConnect();
+  c.set(0, 'loBoost', 50);
+  c.arm(false);
   const base = sent.length;
-  c.arm(true);
-  assert.strictEqual(sent.length, base + P.fullRecall(0, 'stereo', c.state.channels).length);
-  c.set(0, 'loBoost', 99);
-  setTimeout(() => { assert.strictEqual(sent.length, base + P.fullRecall(0, 'stereo', c.state.channels).length + 1); done(); }, 40);
+  c.set(0, 'hiBoost', 70);
+  setTimeout(() => {
+    assert.strictEqual(sent.length, base + 1);
+    c.disarm();
+    c.set(0, 'hiBoost', 90);
+    setTimeout(() => {
+      assert.strictEqual(sent.length, base + 1, 'nothing sent while off');
+      c.arm(true);
+      assert.strictEqual(sent.length, base + 1 + P.fullRecall(0, 'stereo', c.state.channels).length);
+      done();
+    }, 40);
+  }, 40);
 });

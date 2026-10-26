@@ -163,7 +163,9 @@
     const log = opts.log || function () {};
     // armed: commands reach the device. A new connection starts disarmed; nothing is sent
     // until the device reports its own settings or the user confirms (arm).
-    const state = { mode: 'stereo', unit: null, channels: [defaultChannel(), defaultChannel()], armed: true, needConfirm: false };
+    // armed = live control: changes reach the device. Every new connection starts OFF; only the user turns it on.
+    // lastRead = result of the last request for the device's settings.
+    const state = { mode: 'stereo', unit: null, channels: [defaultChannel(), defaultChannel()], armed: true, reading: false, lastRead: null };
     const pending = new Map();
     let timer = null;
 
@@ -212,35 +214,36 @@
       onChange(state, { keys: ['*'], source: source || 'local' });
     }
 
-    let paramReports = 0;
-    function hello() {
-      paramReports = 0; state.armed = false; state.needConfirm = false;
-      pending.clear();
-      out(helloFrame(), 'handshake');
+    let paramReports = 0, readTimer = null;
+    /* Ask the device for its settings: send the handshake, collect reports for ~0.9 s. */
+    function startRead(note) {
+      paramReports = 0; clearTimeout(readTimer);
+      state.reading = true;
+      out(helloFrame(), note);
+      onChange(state, { keys: ['read'], source: 'local' });
+      readTimer = setTimeout(finishRead, 900);
     }
+    function finishRead() {
+      readTimer = null; state.reading = false;
+      const ok = paramReports >= 3;
+      state.lastRead = { ok, count: paramReports, at: Date.now() };
+      if (ok) log('in', [], 'device state adopted (' + paramReports + ' values)');
+      onChange(state, { keys: ['read'], source: 'device' });
+    }
+    /* New connection: live control off, then read the device. Nothing is ever pushed by itself. */
+    function hello() { state.armed = false; pending.clear(); startRead('handshake'); }
+    function requestState() { startRead('request settings'); }
 
-    /* User confirmed: from now on every change goes straight to the device.
-       apply=true also sends the whole app state once. */
+    /* Live control on: from now on every change goes straight to the device. apply=true also sends everything once. */
     function arm(apply) {
-      state.armed = true; state.needConfirm = false;
+      state.armed = true;
       if (apply) recallAll();
       onChange(state, { keys: ['armed'], source: 'local' });
     }
+    function disarm() { state.armed = false; pending.clear(); onChange(state, { keys: ['armed'], source: 'local' }); }
 
-    /* Call ~1 s after hello(). If the device reported its own settings, show those
-       (the device is the truth) and go live. Otherwise send nothing and wait for the
-       user to confirm, so a connection never overwrites the device by itself. */
-    function syncAfterConnect() {
-      if (paramReports >= 3) {
-        log('in', [], 'device state adopted (' + paramReports + ' values)');
-        state.armed = true; state.needConfirm = false;
-        onChange(state, { keys: ['armed'], source: 'device' });
-        return 'device';
-      }
-      state.armed = false; state.needConfirm = true;
-      onChange(state, { keys: ['armed'], source: 'local' });
-      return 'confirm';
-    }
+    /* Kept for callers: did the last read get the device's settings? */
+    function syncAfterConnect() { return paramReports >= 3 ? 'device' : 'none'; }
 
     function receive(bytes) {
       const m = parse(bytes);
@@ -264,7 +267,7 @@
 
     function snapshot() { return JSON.parse(JSON.stringify(state)); }
 
-    return { state, set, setMode, load, recallAll, hello, receive, snapshot, syncAfterConnect, arm };
+    return { state, set, setMode, load, recallAll, hello, receive, snapshot, syncAfterConnect, arm, disarm, requestState };
   }
 
   const helloFrame = hello;
